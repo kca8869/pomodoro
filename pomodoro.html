@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Pomodoro Clock</title>
+	<style type="text/css">
+		body{
+			background-color:#1C262F;
+			color: #fff;
+		}
+		#container{
+			background-color: #333;
+			margin: 0 auto;
+			margin-top: 2em;
+			width: 700px;
+			max-width: 100%;
+			text-align: center;
+		}
+		#box{
+			color:#1C262F;
+			background-color: #fff;
+			max-width: 100%;
+			width: 322px;
+			height: 322px;
+			margin: 0 auto;
+			font-size: 100%;
+			border:solid black 1px;
+			border-radius: 100%;
+			box-shadow: 2px 2px 2px black;
+		}
+		#title{
+			position: relative;
+			top:50%;
+			transform: translateY(-50%);
+		}
+		#clock{
+			max-width: 50%;
+			margin: 0 auto;
+		}
+		.row{
+			display: flex;
+			width: 100%;
+		}
+		@media (max-width: 400px) {
+		.row{
+			display: block;
+		}
+	}
+		.thirds{
+			width: 33%;
+		}
+		.display-div{
+
+			width: 100%;
+			display: flex;
+			font-size: 100%;
+		}
+		.form{
+			background-color: #2E3D49;
+			width: 100%;
+			margin: 1%;
+			border: solid black 1px;
+			box-shadow: 2px 2px black;
+			background: linear-gradient(#2E3D49 95%, #1d2c38);
+		}
+		.hover{
+			cursor: pointer;
+			transition: background-color 1s;
+		}
+		.hover:hover{
+			background-color: gray;
+		}
+		
+	</style>
+</head>
+<body>
+	<audio src="AlarmClock.mp3"></audio>
+	<div id="container">
+		<div class="row" id="top-row">
+			<div class="form">
+				<div class="display-div" id="break">
+					<h1 class="thirds hover" id="break-plus">+</h1>
+					<h1 class="thirds" id="break-title"></h1>
+					<h1 class="thirds hover" id="break-minus">-</h1>
+				</div>
+				<h1 id="break-time"></h1>
+			</div>
+			<div class="form">
+				<div class="display-div" id="session">
+					<h1 class="thirds hover" id="plus">+</h1>
+					<h1 class="thirds" id="session-title"></h1>
+					<h1 class="thirds hover" id="minus">-</h1>
+				</div>
+				<h1 id="session-time"></h1>
+			</div>	
+		</div>
+			<div id="box">
+				<h1 id="title"></h1>
+				<h1 id="clock" class="hover"></h1>
+		</div>
+		
+		
+	</div>
+	<script type="text/javascript">
+		var workTime=25;
+		var min=workTime;
+		var sec=0;
+		var breakTime=5;
+		var running=false;
+		var clock=document.querySelector("#clock");
+		var intervalId;
+		var breakRunning=false;
+		var box=document.querySelector("#box");
+		var plus=document.querySelector("#plus");
+		var minus=document.querySelector("#minus");
+		var title=document.querySelector("#title")
+		var breakPlus=document.querySelector("#break-plus");
+		var breakMinus=document.querySelector("#break-minus");
+		var breakSetting=document.querySelector("#break-time");
+		var sessionSetting=document.querySelector("#session-time");
+		document.querySelector("#break-title").textContent="Break";
+		document.querySelector("#session-title").textContent="Session";
+		var alarm=document.querySelector("audio")
+		breakSetting.textContent=breakTime+":00";
+		sessionSetting.textContent=workTime+":00";
+		var totalSec=workTime*60;
+		var elapsedTime=0;
+		var percent=elapsedTime/totalSec;
+		plus.onclick=function(){
+			if (!running||breakRunning) {
+
+				workTime++;
+				if (!breakRunning) {
+					min=workTime;
+					sec=0;
+					elapsedTime=0;
+				}
+				if (sec<10) {
+					clock.textContent=min+":0"+sec;
+				}else {
+					clock.textContent=min+":"+sec;
+				}
+				sessionSetting.textContent=workTime+":00";;
+			}
+		};
+		minus.onclick=function(){
+			if (!running&&workTime>1||breakRunning&&workTime>1) {
+			//if (min>0) {
+				workTime--;
+				if (!breakRunning) {
+					min=workTime;
+					sec=0;
+					elapsedTime=0;
+				}
+				
+				if (sec<10) {
+					clock.textContent=min+":0"+sec;
+				}else {
+					clock.textContent=min+":"+sec;
+				}
+			
+			sessionSetting.textContent=workTime+":00";
+		}
+		};
+		breakPlus.onclick=function(){
+			if (!breakRunning||!running) {
+				breakTime++;
+					if (breakRunning) {
+						min=breakTime;
+						sec=0;
+						elapsedTime=0;
+					}
+				if (sec<10) {
+					clock.textContent=min+":0"+sec;
+				}else {
+					clock.textContent=min+":"+sec;
+				}
+				breakSetting.textContent=breakTime+":00";
+			}
+		};
+		breakMinus.onclick=function(){
+			if (!running&&breakTime>1||!breakRunning&&breakTime>1) {
+				if (breakRunning) {
+					min=breakTime;
+					sec=0;
+					elapsedTime=0;
+				}
+				breakTime--;
+				if (sec<10) {
+					clock.textContent=min+":0"+sec;
+				}else {
+					clock.textContent=min+":"+sec;
+				}
+				breakSetting.textContent=breakTime+":00";
+			}
+		};
+		box.onclick=function(){
+			alarm.pause();
+		}
+		clock.onclick=function(e){
+			if (!breakRunning) {
+				if (!running) {
+					startCountDown();
+					running=true;
+				}else {
+					running=false;
+					clearInterval(intervalId); 
+				}
+			}else{
+				if (!running) {
+					startBreak();
+					running=true;
+				}else {
+					running=false;
+					clearInterval(intervalBreak); 
+				}
+			}
+		};
+		title.textContent="Session";
+		clock.textContent=min+":00";
+		function runBreak(){
+			title.textContent="Break!";
+			sec--
+			if (sec<0) {
+				min--;
+				sec=59;
+			}
+			if (min===0&&sec===0) {
+				alarm.play();
+				clearInterval(intervalBreak);
+				breakRunning=false;
+				min=workTime;
+				title.textContent="Session";
+				startCountDown();
+				elapsedTime=0;
+			}
+			if (sec<10) {
+				clock.textContent=min+":0"+sec;
+			}else {
+				clock.textContent=min+":"+sec;
+			}
+			elapsedTime++;
+			totalSec=breakTime*60
+			percent=(elapsedTime/totalSec)*100;
+			box.style.background="linear-gradient(green "+percent+"%,white 1%, white)"
+			
+		};
+		function makeTime() {
+			title.textContent="Session";
+			sec--;
+			if (sec<0) {
+				min--;
+				sec=59;
+			}
+			if (min===0&&sec===0) {
+				alarm.play();
+				clearInterval(intervalId)
+				breakRunning=true;
+				min=breakTime;
+				title.textContent="Break!";
+				startBreak();
+				elapsedTime=0;
+				}			
+			if (sec<10) {
+				clock.textContent=min+":0"+sec;
+			}else {
+				clock.textContent=min+":"+sec;
+			}
+			elapsedTime++;
+			totalSec=workTime*60
+			percent=(elapsedTime/totalSec)*100;
+			box.style.background="linear-gradient(red "+percent+"%,white 1%, white)"
+			
+		};
+		function startCountDown(){
+			intervalId=setInterval(makeTime,1000);
+		};
+		function startBreak(){
+			intervalBreak=setInterval(runBreak,1000);
+		};
+	</script>
+</body>
+</html>
+
